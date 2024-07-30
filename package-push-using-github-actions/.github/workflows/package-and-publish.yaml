@@ -1,0 +1,51 @@
+name: Package and Publish
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '16'  # Specify your Node.js version
+
+      - name: Install dependencies
+        run: |
+          cd npm-package
+          npm install
+
+      - name: Build package
+        run: |
+          cd npm-package
+          npm run build  # Adjust if needed
+
+      - name: Create npm package
+        run: |
+          cd npm-package
+          npm pack  # Create the .tgz package file
+
+      - name: Set up Cloudsmith CLI
+        uses: cloudsmith-io/github-action@v1
+        with:
+          cloudsmith_repo: "interview-arshad-qureshi"
+        env:
+          CLOUDSMITH_API_KEY: "f17a7f9e58bc59225d5b6e4fc4ba6fdd9f1477a8"
+
+      - name: Publish package to Cloudsmith
+        run: |
+          cd npm-package
+          cloudsmith push npm YOUR_CLOUDSMITH_REPO_NAME *.tgz
+        env:
+          CLOUDSMITH_API_KEY: "f17a7f9e58bc59225d5b6e4fc4ba6fdd9f1477a8"
