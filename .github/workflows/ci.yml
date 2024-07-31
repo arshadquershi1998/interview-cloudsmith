@@ -73,6 +73,6 @@ jobs:
       - name: Publish package to Cloudsmith
         run: |
           cd dummy-package
-          cloudsmith push npm  interview-package-github-actions*.tgz
+          cloudsmith push npm  arshad-qureshi/interview-package-github-actions*.tgz
         env:
           CLOUDSMITH_API_KEY: "f17a7f9e58bc59225d5b6e4fc4ba6fdd9f1477a8"
