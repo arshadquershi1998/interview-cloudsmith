@@ -43,11 +43,22 @@ jobs:
 
       - name: Get OIDC token
         run: |
-          value=$(curl -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=api://AzureADTokenExchange" | jq -r '.value')
-          token=$(curl -X POST -H "Content-Type: application/json" -d "{\"oidc_token\":\"$value\", \"service_slug\":\"github-actions\"}" https://api.cloudsmith.io/openid/arshad-qureshi/ | jq -r '.token')
-          echo "CLOUDSMITH_API_KEY=$token" >> $GITHUB_ENV
-          echo "OIDC Token: $value"
-          echo "JWT Token: $token"
+          echo "Requesting OIDC token"
+          oidc_response=$(curl -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=api://AzureADTokenExchange")
+          echo "OIDC Response: $oidc_response"
+          oidc_token=$(echo $oidc_response | jq -r '.value')
+          echo "OIDC Token: $oidc_token"
+          
+
+      - name: Request Cloudsmith JWT Token
+        run: |
+          echo "Requesting Cloudsmith JWT token"
+          jwt_response=$(curl -X POST -H "Content-Type: application/json" -d "{\"oidc_token\":\"$oidc_token\", \"service_slug\":\"github-actions\"}" https://api.cloudsmith.io/openid/arshad-qureshi/)
+          echo "JWT Response: $jwt_response"
+          cloudsmith_jwt=$(echo $jwt_response | jq -r '.token')
+          echo "JWT Token: $cloudsmith_jwt"
+          echo "CLOUDSMITH_API_KEY=$cloudsmith_jwt" >> $GITHUB_ENV
+          curl --request GET --url https://api.cloudsmith.io/v1/user/self/ --header "X-Api-Key:Bearer $token" --header 'accept: application/json'
 
       - name: Cloudsmith Push Debian Package
         uses: cloudsmith-io/action@v0.5.3
@@ -55,7 +66,7 @@ jobs:
           command: 'push'
           format: 'deb'
           owner: 'arshad-qureshi'             # Your Cloudsmith account name or org name (namespace)
-          repo: 'interview-arshad-qureshi'         # Your Cloudsmith Repository name (slug)
+          repo: 'github-actions'         # Your Cloudsmith Repository name (slug)
           distro: 'debian'     # Your Distribution  (i.e Debian, Ubuntu)
           release: 'buster'         # Your Distribution Release (i.e xenial, buster)
           republish: 'true'          # needed if version is not changing
