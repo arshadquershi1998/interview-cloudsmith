@@ -67,12 +67,12 @@ jobs:
 
       - name: Configure Cloudsmith with OIDC
         run: |
-          echo "export CLOUDSMITH_API_KEY=${{ secrets.CLOUDSMITH_API_KEY }}" >> $GITHUB_ENV
+          echo "export CLOUDSMITH_API_KEY=YOUR_CLOUDSMITH_API_KEY" >> $GITHUB_ENV
           echo "export OIDC_TOKEN=${{ steps.get_oidc_token.outputs.token }}" >> $GITHUB_ENV
 
       - name: Publish package to Cloudsmith
         run: |
           cd dummy-package
-          cloudsmith push npm ${{ secrets.CLOUDSMITH_REPO_NAME }} *.tgz
+          cloudsmith push npm  interview-package-github-actions*.tgz
         env:
-          CLOUDSMITH_API_KEY: ${{ secrets.CLOUDSMITH_API_KEY }}
+          CLOUDSMITH_API_KEY: "f17a7f9e58bc59225d5b6e4fc4ba6fdd9f1477a8"
