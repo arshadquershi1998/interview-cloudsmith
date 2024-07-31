@@ -47,13 +47,9 @@ jobs:
           token=$(curl -s -H "Authorization: Bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=api://AzureADTokenExchange" | jq -r .value)
           echo "::set-output name=token::$token"
 
-      - name: Set up Cloudsmith CLI
-        uses: cloudsmith-io/github-action@v1
-        with:
-          cloudsmith_repo: "interview-arshad-qureshi"
-
-        env:
-          CLOUDSMITH_API_KEY: "f17a7f9e58bc59225d5b6e4fc4ba6fdd9f1477a8"
+      - name: Install Cloudsmith CLI
+        run: |
+          pip install cloudsmith-cli
 
       - name: Configure Cloudsmith with OIDC
         run: |
