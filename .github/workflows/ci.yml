@@ -43,22 +43,11 @@ jobs:
 
       - name: Get OIDC token
         run: |
-          echo "Requesting OIDC token"
-          oidc_response=$(curl -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=api://AzureADTokenExchange")
-          echo "OIDC Response: $oidc_response"
-          oidc_token=$(echo $oidc_response | jq -r '.value')
-          echo "OIDC Token: $oidc_token"
-          echo "::set-output name=oidc_token::$oidc_token"
-
-      - name: Request Cloudsmith JWT Token
-        id: get_cloudsmith_token
-        run: |
-          echo "Requesting Cloudsmith JWT token"
-          cloudsmith_jwt=$(curl -X POST -H "Content-Type: application/json" -d "{\"oidc_token\":\"${{ steps.get_oidc_token.outputs.oidc_token }}\", \"service_slug\":\"github-actions\"}" https://api.cloudsmith.io/openid/arshad-qureshi/)
-          echo "JWT Response: $cloudsmith_jwt"
-          cloudsmith_token=$(echo $cloudsmith_jwt | jq -r '.token')
-          echo "JWT Token: $cloudsmith_token"
-          echo "CLOUDSMITH_API_KEY=$cloudsmith_token" >> $GITHUB_ENV
+          value=$(curl -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=api://AzureADTokenExchange" | jq '.value')
+          token=$(curl -X POST -H "Content-Type: application/json" -d "{\"oidc_token\":$value, \"service_slug\":\"github-actions\"}" https://api.cloudsmith.io/openid/interview-arshad-qureshi/ | jq -r '.token')
+          curl --request GET --url https://api.cloudsmith.io/v1/user/self/ --header "X-Api-Key:Bearer $token" --header 'accept: application/json'
+                    
+          echo "CLOUDSMITH_API_KEY=$token" >> $GITHUB_ENV
 
       - name: Cloudsmith Push Debian Package
         uses: cloudsmith-io/action@v0.5.3
