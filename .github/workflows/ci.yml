@@ -25,19 +25,33 @@ jobs:
         with:
           node-version: '16'  # Specify your Node.js version
 
-      - name: Install dependencies
+      - name: Create dummy npm package
         run: |
-          cd npm-package
+          mkdir dummy-package
+          cd dummy-package
+          echo '{
+            "name": "dummy-package",
+            "version": "1.0.0",
+            "description": "A dummy npm package",
+            "main": "index.js",
+            "scripts": {
+              "build": "echo Building...",
+              "test": "echo Testing..."
+            },
+            "author": "Your Name",
+            "license": "MIT"
+          }' > package.json
+          echo 'console.log("Hello, world!");' > index.js
           npm install
 
       - name: Build package
         run: |
-          cd npm-package
+          cd dummy-package
           npm run build  # Adjust if needed
 
       - name: Create npm package
         run: |
-          cd npm-package
+          cd dummy-package
           npm pack  # Create the .tgz package file
 
       - name: Request OIDC Token
@@ -58,5 +72,5 @@ jobs:
 
       - name: Publish package to Cloudsmith
         run: |
-          cd npm-package
+          cd dummy-package
           cloudsmith push npm ${{ secrets.CLOUDSMITH_REPO_NAME }} *.tgz
