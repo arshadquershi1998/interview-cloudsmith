@@ -29,7 +29,7 @@ jobs:
           command: 'push'
           format: 'deb'
           owner: 'arshad qureshi'             # Your Cloudsmith account name or org name (namespace)
-          repo: 'interview-arshad-qureshi'         # Your Cloudsmith Repository name (slug)
+          repo: 'github-actions'         # Your Cloudsmith Repository name (slug)
           distro: 'debian'     # Your Distribution  (i.e Debian, Ubuntu)
           release: 'buster'         # Your Distribution Release (i.e xenial, buster)
           republish: 'true'          # needed if version is not changing
