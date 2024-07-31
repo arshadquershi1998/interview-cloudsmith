@@ -55,19 +55,13 @@ jobs:
           cd dummy-package
           npm pack  # Create the .tgz package file
 
-      - name: Request OIDC Token
-        id: get_oidc_token
+      - name: Get OIDC token
         run: |
-          echo "Requesting OIDC token"
-          oidc_token=$(curl -s -H "Authorization: Bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=api://AzureADTokenExchange" | jq -r '.value')
-          echo "::set-output name=oidc_token::$oidc_token"
-
-      - name: Request Cloudsmith JWT Token
-        id: get_cloudsmith_token
-        run: |
-          echo "Requesting Cloudsmith JWT token"
-          cloudsmith_jwt=$(curl -s -X POST -H "Content-Type: application/json" -d "{\"oidc_token\":\"${{ steps.get_oidc_token.outputs.oidc_token }}\", \"service_slug\":\"github-actions\"}" https://api.cloudsmith.io/openid/github-actions/ | jq -r '.token')
-          echo "::set-output name=cloudsmith_token::$cloudsmith_jwt"
+          value=$(curl -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=api://AzureADTokenExchange" | jq '.value')
+          token=$(curl -X POST -H "Content-Type: application/json" -d "{\"oidc_token\":$value, \"service_slug\":\"github-actions\"}" https://api.cloudsmith.io/openid/github-actions/ | jq -r '.token')
+          curl --request GET --url https://api.cloudsmith.io/v1/user/self/ --header "X-Api-Key:Bearer $token" --header 'accept: application/json'
+                    
+          echo "CLOUDSMITH_API_KEY=$token" >> $GITHUB_ENV
 
       - name: Install Cloudsmith CLI
         run: |
