@@ -52,8 +52,9 @@ jobs:
 
       - name: Request Cloudsmith JWT Token
         run: |
+          token=$(curl -X POST -H "Content-Type: application/json" -d "{\"oidc_token\":$value, \"service_slug\":\"SERVICE_ACCOUNT_SLUG\"}" https://api.cloudsmith.io/openid/interview-arshad-qureshi/ | jq -r '.token')
           echo "Requesting Cloudsmith JWT token"
-          jwt_response=$(curl -X POST -H "Content-Type: application/json" -d "{\"oidc_token\":\"$oidc_token\", \"service_slug\":\"github-actions\"}" https://api.cloudsmith.io/openid/arshad-qureshi/)
+          jwt_response=$(curl -X POST -H "Content-Type: application/json" -d "{\"oidc_token\":\"$oidc_token\", \"service_slug\":\"github-actions\"}" https://api.cloudsmith.io/openid/interview-arshad-qureshi/)
           echo "JWT Response: $jwt_response"
           cloudsmith_jwt=$(echo $jwt_response | jq -r '.token')
           echo "JWT Token: $cloudsmith_jwt"
