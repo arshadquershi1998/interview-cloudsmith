@@ -59,20 +59,25 @@ jobs:
         id: get_oidc_token
         run: |
           echo "Requesting OIDC token"
-          token=$(curl -s -H "Authorization: Bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=api://AzureADTokenExchange" | jq -r .value)
-          echo "::set-output name=token::$token"
+          value=$(curl -s -H "Authorization: Bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=api://AzureADTokenExchange" | jq -r '.value')
+          echo "OIDC token: $value"
+          echo "::set-output name=oidc_token::$value"
+
+      - name: Request Cloudsmith Access Token
+        id: get_cloudsmith_token
+        run: |
+          echo "Requesting Cloudsmith access token"
+          jwt=$(curl -s -X POST -H "Content-Type: application/json" -d "{\"oidc_token\":\"${{ steps.get_oidc_token.outputs.oidc_token }}\", \"service_slug\":\"github-service\"}" https://api.cloudsmith.io/openid/{arshad-qureshi}/ | jq -r '.token')
+          echo "Cloudsmith access token: $jwt"
+          echo "::set-output name=cloudsmith_token::$jwt"
 
       - name: Install Cloudsmith CLI
         run: |
           pip install cloudsmith-cli
 
-      - name: Configure Cloudsmith with OIDC
-        run: |
-          echo "export OIDC_TOKEN=${{ steps.get_oidc_token.outputs.token }}" >> $GITHUB_ENV
-          
       - name: Publish package to Cloudsmith
         run: |
           cd dummy-package
           PACKAGE_FILE=$(ls *.tgz)
-          cloudsmith login --token "${{ steps.get_oidc_token.outputs.token }}"  # OIDC login
+          cloudsmith login --token "${{ steps.get_cloudsmith_token.outputs.cloudsmith_token }}"  # OIDC login
           cloudsmith push npm interview-arshad-qureshi/interview-arshad-qureshi $PACKAGE_FILE
