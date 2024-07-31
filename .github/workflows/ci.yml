@@ -50,9 +50,10 @@ jobs:
       - name: Set up Cloudsmith CLI
         uses: cloudsmith-io/github-action@v1
         with:
-          cloudsmith_repo: ${{ secrets.CLOUDSMITH_REPO_NAME }}
+          cloudsmith_repo: "interview-arshad-qureshi"
+
         env:
-          CLOUDSMITH_API_KEY: ${{ secrets.CLOUDSMITH_API_KEY }}
+          CLOUDSMITH_API_KEY: "f17a7f9e58bc59225d5b6e4fc4ba6fdd9f1477a8"
 
       - name: Configure Cloudsmith with OIDC
         run: |
