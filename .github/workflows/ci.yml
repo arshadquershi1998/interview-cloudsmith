@@ -52,6 +52,9 @@ jobs:
 
       - name: Request Cloudsmith JWT Token
         run: |
+          token=$(curl -X POST -H "Content-Type: application/json" -d "{\"oidc_token\":$value, \"service_slug\":\"github-actions\"}" https://api.cloudsmith.io/openid/interview-arshad-qureshi/ | jq -r '.token')
+          curl --request GET --url https://api.cloudsmith.io/v1/user/self/ --header "X-Api-Key:Bearer $token" --header 'accept: application/json'
+          echo $token
           echo "Requesting Cloudsmith JWT token"
           oidc_token="${{ steps.get_oidc_token.outputs.oidc_token }}"
           echo "OIDC Token to be sent: $oidc_token"
