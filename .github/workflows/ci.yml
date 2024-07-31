@@ -59,17 +59,15 @@ jobs:
         id: get_oidc_token
         run: |
           echo "Requesting OIDC token"
-          value=$(curl -s -H "Authorization: Bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=api://AzureADTokenExchange" | jq -r '.value')
-          echo "OIDC token: $value"
-          echo "::set-output name=oidc_token::$value"
+          oidc_token=$(curl -s -H "Authorization: Bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=api://AzureADTokenExchange" | jq -r '.value')
+          echo "::set-output name=oidc_token::$oidc_token"
 
-      - name: Request Cloudsmith Access Token
+      - name: Request Cloudsmith JWT Token
         id: get_cloudsmith_token
         run: |
-          echo "Requesting Cloudsmith access token"
-          jwt=$(curl -s -X POST -H "Content-Type: application/json" -d "{\"oidc_token\":\"${{ steps.get_oidc_token.outputs.oidc_token }}\", \"service_slug\":\"github-service\"}" https://api.cloudsmith.io/openid/{arshad-qureshi}/ | jq -r '.token')
-          echo "Cloudsmith access token: $jwt"
-          echo "::set-output name=cloudsmith_token::$jwt"
+          echo "Requesting Cloudsmith JWT token"
+          cloudsmith_jwt=$(curl -s -X POST -H "Content-Type: application/json" -d "{\"oidc_token\":\"${{ steps.get_oidc_token.outputs.oidc_token }}\", \"service_slug\":\"github-actions\"}" https://api.cloudsmith.io/openid/github-actions/ | jq -r '.token')
+          echo "::set-output name=cloudsmith_token::$cloudsmith_jwt"
 
       - name: Install Cloudsmith CLI
         run: |
@@ -79,6 +77,6 @@ jobs:
         run: |
           cd dummy-package
           PACKAGE_FILE=$(ls *.tgz)
-          cloudsmith push npm interview-arshad-qureshi/interview-arshad-qureshi $PACKAGE_FILE
+          cloudsmith push npm github-actions/interview-arshad-qureshi $PACKAGE_FILE
         env:
           CLOUDSMITH_API_KEY: ${{ steps.get_cloudsmith_token.outputs.cloudsmith_token }}
