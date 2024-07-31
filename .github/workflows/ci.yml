@@ -43,7 +43,13 @@ jobs:
           echo "CLOUDSMITH_API_KEY=$token" >> $GITHUB_ENV
 
       - name: Cloudsmith Push Debian Package
-        run: |
-          cloudsmith push deb arshad-qureshi/github-actions/debian/buster test/cloudsmith-debian-example-1.0.0-amd64.deb --republish
-        env:
-          CLOUDSMITH_API_KEY: ${{ env.CLOUDSMITH_API_KEY }}
+        uses: cloudsmith-io/action@v0.5.3
+        with:
+          command: 'push'
+          format: 'deb'
+          owner: 'arshad-qureshi'             # Your Cloudsmith account name or org name (namespace)
+          repo: 'github-actions'         # Your Cloudsmith Repository name (slug)
+          distro: 'debian'     # Your Distribution  (i.e Debian, Ubuntu)
+          release: 'buster'         # Your Distribution Release (i.e xenial, buster)
+          republish: 'true'          # needed if version is not changing
+          file: 'test/cloudsmith-debian-example-1.0.0-amd64.deb'  # debian package filename
