@@ -7,7 +7,7 @@ on:
   pull_request:
     branches:
       - main
-  workflow_dispatch:  # This enables manual triggering
+  workflow_dispatch:  # Allows manual triggering of the workflow
 
 permissions:
   id-token: write
@@ -68,13 +68,11 @@ jobs:
 
       - name: Configure Cloudsmith with OIDC
         run: |
-          echo "export CLOUDSMITH_API_KEY=YOUR_CLOUDSMITH_API_KEY" >> $GITHUB_ENV
           echo "export OIDC_TOKEN=${{ steps.get_oidc_token.outputs.token }}" >> $GITHUB_ENV
-
+          
       - name: Publish package to Cloudsmith
         run: |
           cd dummy-package
           PACKAGE_FILE=$(ls *.tgz)
+          cloudsmith login --token "${{ steps.get_oidc_token.outputs.token }}"  # OIDC login
           cloudsmith push npm interview-arshad-qureshi/interview-arshad-qureshi $PACKAGE_FILE
-        env:
-          CLOUDSMITH_API_KEY: "f17a7f9e58bc59225d5b6e4fc4ba6fdd9f1477a8"
