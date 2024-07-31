@@ -77,6 +77,6 @@ jobs:
         run: |
           cd dummy-package
           PACKAGE_FILE=$(ls *.tgz)
-          cloudsmith push npm github-actions/interview-arshad-qureshi $PACKAGE_FILE
+          cloudsmith push npm interview-arshad-qureshi/interview-arshad-qureshi $PACKAGE_FILE
         env:
           CLOUDSMITH_API_KEY: ${{ steps.get_cloudsmith_token.outputs.cloudsmith_token }}
