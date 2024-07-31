@@ -48,18 +48,17 @@ jobs:
           echo "OIDC Response: $oidc_response"
           oidc_token=$(echo $oidc_response | jq -r '.value')
           echo "OIDC Token: $oidc_token"
-          
+          echo "::set-output name=oidc_token::$oidc_token"
 
       - name: Request Cloudsmith JWT Token
+        id: get_cloudsmith_token
         run: |
-          token=$(curl -X POST -H "Content-Type: application/json" -d "{\"oidc_token\":$value, \"service_slug\":\"SERVICE_ACCOUNT_SLUG\"}" https://api.cloudsmith.io/openid/interview-arshad-qureshi/ | jq -r '.token')
           echo "Requesting Cloudsmith JWT token"
-          jwt_response=$(curl -X POST -H "Content-Type: application/json" -d "{\"oidc_token\":\"$oidc_token\", \"service_slug\":\"github-actions\"}" https://api.cloudsmith.io/openid/interview-arshad-qureshi/)
-          echo "JWT Response: $jwt_response"
-          cloudsmith_jwt=$(echo $jwt_response | jq -r '.token')
-          echo "JWT Token: $cloudsmith_jwt"
-          echo "CLOUDSMITH_API_KEY=$cloudsmith_jwt" >> $GITHUB_ENV
-          curl --request GET --url https://api.cloudsmith.io/v1/user/self/ --header "X-Api-Key:Bearer $token" --header 'accept: application/json'
+          cloudsmith_jwt=$(curl -X POST -H "Content-Type: application/json" -d "{\"oidc_token\":\"${{ steps.get_oidc_token.outputs.oidc_token }}\", \"service_slug\":\"github-actions\"}" https://api.cloudsmith.io/openid/arshad-qureshi/)
+          echo "JWT Response: $cloudsmith_jwt"
+          cloudsmith_token=$(echo $cloudsmith_jwt | jq -r '.token')
+          echo "JWT Token: $cloudsmith_token"
+          echo "CLOUDSMITH_API_KEY=$cloudsmith_token" >> $GITHUB_ENV
 
       - name: Cloudsmith Push Debian Package
         uses: cloudsmith-io/action@v0.5.3
