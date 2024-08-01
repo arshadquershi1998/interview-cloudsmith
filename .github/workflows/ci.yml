@@ -44,7 +44,7 @@ jobs:
       - name: Get OIDC token
         id: get_oidc_token
         run: |
-          oidc_token=$(echo "${{ steps.get_oidc_token.outputs.token }}" | jq -r '.token')
+          oidc_token=$(echo "${{ github.actor }}" | jq -r '.token')
           echo "OIDC Token: $oidc_token"
           echo "OIDC_TOKEN=$oidc_token" >> $GITHUB_ENV
 
