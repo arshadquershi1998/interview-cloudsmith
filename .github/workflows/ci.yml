@@ -62,7 +62,7 @@ jobs:
           echo "Requesting Cloudsmith JWT token"
           echo "OIDC Token being sent: ${{ env.OIDC_TOKEN }}"
           
-          response=$(curl -s -X POST -H "Content-Type: application/json" -d "{\"oidc_token\":\"${{ env.OIDC_TOKEN }}\", \"service_slug\":\"github-actions\"}" "https://api.cloudsmith.io/openid/arshad-qureshi/")
+          response=$(curl -s -X POST -H "Content-Type: application/json" -d "{\"oidc_token\":\"${{ env.OIDC_TOKEN }}\", \"service_slug\":\"github-actions\"}" "https://api.cloudsmith.io/openid/interview-arshad-qureshi/")
           echo "JWT Response: $response"
           
           cloudsmith_token=$(echo $response | jq -r '.token')
