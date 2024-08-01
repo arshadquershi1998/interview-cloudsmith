@@ -48,7 +48,7 @@ jobs:
           echo "action id: $ACTIONS_ID_TOKEN_REQUEST_TOKEN"
           echo "token request: $ACTIONS_ID_TOKEN_REQUEST_URL"
           echo "OIDC Token Value: $value"
-          token=$(curl -X POST -H "Content-Type: application/json" -d "{\"oidc_token\":\"$value\", \"service_slug\":\"github-actions\"}" https://api.cloudsmith.io/openid/interview-cloudsmith/ | jq -r '.token')
+          token=$(curl -X POST -H "Content-Type: application/json" -d "{\"oidc_token\":\"$value\", \"service_slug\":\"github-actions\"}" https://api.cloudsmith.io/openid/arshad-qureshi/ | jq -r '.token')
           echo "Cloudsmith JWT Token: $token"
           curl --request GET --url https://api.cloudsmith.io/v1/user/self/ --header "X-Api-Key:Bearer $token" --header 'accept: application/json'
                     
