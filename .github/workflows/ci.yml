@@ -44,27 +44,26 @@ jobs:
       - name: Get OIDC token
         id: get_oidc_token
         run: |
-          # Print environment variables for debugging
           echo "ACTIONS_ID_TOKEN_REQUEST_TOKEN: ${ACTIONS_ID_TOKEN_REQUEST_TOKEN}"
           echo "ACTIONS_ID_TOKEN_REQUEST_URL: ${ACTIONS_ID_TOKEN_REQUEST_URL}"
           
-          # Request OIDC token and print response
           response=$(curl -s -H "Authorization: bearer ${ACTIONS_ID_TOKEN_REQUEST_TOKEN}" "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=api://AzureADTokenExchange")
           echo "OIDC Token Response: $response"
           
-          # Extract OIDC token
           oidc_token=$(echo $response | jq -r '.value')
           echo "OIDC Token: $oidc_token"
           
-          # Set OIDC token as an environment variable
           echo "OIDC_TOKEN=$oidc_token" >> $GITHUB_ENV
 
       - name: Request Cloudsmith JWT Token
         id: request_jwt
         run: |
           echo "Requesting Cloudsmith JWT token"
+          echo "OIDC Token being sent: ${{ env.OIDC_TOKEN }}"
+          
           response=$(curl -s -X POST -H "Content-Type: application/json" -d "{\"oidc_token\":\"${{ env.OIDC_TOKEN }}\", \"service_slug\":\"github-actions\"}" "https://api.cloudsmith.io/openid/arshad-qureshi/")
           echo "JWT Response: $response"
+          
           cloudsmith_token=$(echo $response | jq -r '.token')
           echo "JWT Token: $cloudsmith_token"
           echo "CLOUDSMITH_API_KEY=$cloudsmith_token" >> $GITHUB_ENV
