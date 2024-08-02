@@ -36,52 +36,37 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y dpkg-dev jq
 
-      - name: Increment version
-        id: increment_version
-        run: |
-          version=$(cat VERSION)
-          echo "Current version: $version"
-          new_version=$(echo $version | awk -F. -v OFS=. '{$NF += 1 ; print}')
-          echo "New version: $new_version"
-          echo $new_version > VERSION
-          echo "new_version=$new_version" >> $GITHUB_ENV
-
       - name: Create Debian package
         run: |
-          mkdir -p test/cloudsmith-debian-example-${{ env.new_version }}-amd64/DEBIAN
+          mkdir -p test/cloudsmith-debian-example-1.0.0-amd64/DEBIAN
           echo 'Package: cloudsmith-debian-example
-          Version: ${{ env.new_version }}
+          Version: 1.0.0
           Section: base
           Priority: optional
           Architecture: amd64
           Maintainer: Your Name <you@example.com>
           Description: This is a Cloudsmith Debian example package
-          ' > test/cloudsmith-debian-example-${{ env.new_version }}-amd64/DEBIAN/control
-          mkdir -p test/cloudsmith-debian-example-${{ env.new_version }}-amd64/usr/local/bin
-          echo '#!/bin/bash\necho "Hello, Cloudsmith!"' > test/cloudsmith-debian-example-${{ env.new_version }}-amd64/usr/local/bin/cloudsmith-debian-example
-          chmod 755 test/cloudsmith-debian-example-${{ env.new_version }}-amd64/usr/local/bin/cloudsmith-debian-example
-          dpkg-deb --build test/cloudsmith-debian-example-${{ env.new_version }}-amd64
-
-      - name: Verify Debian package creation
-        run: |
-          ls -la test
-          ls -la test/cloudsmith-debian-example-${{ env.new_version }}-amd64.deb
+          ' > test/cloudsmith-debian-example-1.0.0-amd64/DEBIAN/control
+          mkdir -p test/cloudsmith-debian-example-1.0.0-amd64/usr/local/bin
+          echo '#!/bin/bash\necho "Hello, Cloudsmith!"' > test/cloudsmith-debian-example-1.0.0-amd64/usr/local/bin/cloudsmith-debian-example
+          chmod 755 test/cloudsmith-debian-example-1.0.0-amd64/usr/local/bin/cloudsmith-debian-example
+          dpkg-deb --build test/cloudsmith-debian-example-1.0.0-amd64
 
       - name: Get OIDC token
         run: |
-          value=$(curl -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=api://AzureADTokenExchange" | jq -r '.value')
-          token=$(curl -X POST -H "Content-Type: application/json" -d "{\"oidc_token\":\"$value\", \"service_slug\":\"${{ github.event.inputs.service_slug }}\"}" "https://api.cloudsmith.io/openid/${{ github.event.inputs.owner }}/" | jq -r '.token')
+          value=$(curl -H "Authorization: bearer ${{ secrets.ACTIONS_ID_TOKEN_REQUEST_TOKEN }}" "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=api://AzureADTokenExchange" | jq -r '.value')
+          echo "OIDC Token: $value"
+          token=$(curl -X POST -H "Content-Type: application/json" -d "{\"oidc_token\":\"$value\", \"service_slug\":\"${{ github.event.inputs.service_slug }}\"}" https://api.cloudsmith.io/openid/${{ github.event.inputs.owner }}/ | jq -r '.token')
           echo "CLOUDSMITH_API_KEY=$token" >> $GITHUB_ENV
-          curl --request GET --url https://api.cloudsmith.io/v1/user/self/ --header "X-Api-Key:Bearer $token" --header 'accept: application/json'
 
       - name: Cloudsmith Push Debian Package
         uses: cloudsmith-io/action@v0.5.3
         with:
           command: 'push'
           format: 'deb'
-          owner: ${{ github.event.inputs.owner }}
-          repo: ${{ github.event.inputs.repo }}
+          owner: '${{ github.event.inputs.owner }}'
+          repo: '${{ github.event.inputs.repo }}'
           distro: 'debian'
           release: 'buster'
           republish: 'true'
-          file: 'test/cloudsmith-debian-example-${{ env.new_version }}-amd64.deb'
+          file: 'test/cloudsmith-debian-example-1.0.0-amd64.deb'
