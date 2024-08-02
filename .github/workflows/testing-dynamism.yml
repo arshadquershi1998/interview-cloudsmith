@@ -1,0 +1,87 @@
+name: Push a Debian package to Cloudsmith with OIDC
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      owner:
+        description: 'The owner of the Cloudsmith repository'
+        required: true
+        default: 'default-owner'
+      repo:
+        description: 'The name of the Cloudsmith repository'
+        required: true
+        default: 'default-repo'
+      service_slug:
+        description: 'The service slug for Cloudsmith OIDC'
+        required: true
+        default: 'default-service-slug'
+
+permissions:
+  id-token: write
+  contents: read
+  pages: write
+
+jobs:
+  push:
+    runs-on: ubuntu-latest
+    name: Push a Debian package to Cloudsmith using OIDC to authenticate
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v2
+
+      - name: Set up environment
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y dpkg-dev jq
+
+      - name: Increment version
+        id: increment_version
+        run: |
+          version=$(cat VERSION)
+          echo "Current version: $version"
+          new_version=$(echo $version | awk -F. -v OFS=. '{$NF += 1 ; print}')
+          echo "New version: $new_version"
+          echo $new_version > VERSION
+          echo "new_version=$new_version" >> $GITHUB_ENV
+
+      - name: Create Debian package
+        run: |
+          mkdir -p test/cloudsmith-debian-example-${{ env.new_version }}-amd64/DEBIAN
+          echo 'Package: cloudsmith-debian-example
+          Version: ${{ env.new_version }}
+          Section: base
+          Priority: optional
+          Architecture: amd64
+          Maintainer: Your Name <you@example.com>
+          Description: This is a Cloudsmith Debian example package
+          ' > test/cloudsmith-debian-example-${{ env.new_version }}-amd64/DEBIAN/control
+          mkdir -p test/cloudsmith-debian-example-${{ env.new_version }}-amd64/usr/local/bin
+          echo '#!/bin/bash\necho "Hello, Cloudsmith!"' > test/cloudsmith-debian-example-${{ env.new_version }}-amd64/usr/local/bin/cloudsmith-debian-example
+          chmod 755 test/cloudsmith-debian-example-${{ env.new_version }}-amd64/usr/local/bin/cloudsmith-debian-example
+          dpkg-deb --build test/cloudsmith-debian-example-${{ env.new_version }}-amd64
+
+      - name: Verify Debian package creation
+        run: |
+          ls -la test
+          ls -la test/cloudsmith-debian-example-${{ env.new_version }}-amd64.deb
+
+      - name: Get OIDC token
+        run: |
+          value=$(curl -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=api://AzureADTokenExchange" | jq -r '.value')
+          token=$(curl -X POST -H "Content-Type: application/json" -d "{\"oidc_token\":\"$value\", \"service_slug\":\"${{ github.event.inputs.service_slug }}\"}" "https://api.cloudsmith.io/openid/${{ github.event.inputs.owner }}/" | jq -r '.token')
+          echo "CLOUDSMITH_API_KEY=$token" >> $GITHUB_ENV
+          curl --request GET --url https://api.cloudsmith.io/v1/user/self/ --header "X-Api-Key:Bearer $token" --header 'accept: application/json'
+
+      - name: Cloudsmith Push Debian Package
+        uses: cloudsmith-io/action@v0.5.3
+        with:
+          command: 'push'
+          format: 'deb'
+          owner: ${{ github.event.inputs.owner }}
+          repo: ${{ github.event.inputs.repo }}
+          distro: 'debian'
+          release: 'buster'
+          republish: 'true'
+          file: 'test/cloudsmith-debian-example-${{ env.new_version }}-amd64.deb'
