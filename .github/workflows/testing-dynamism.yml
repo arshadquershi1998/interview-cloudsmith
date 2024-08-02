@@ -34,7 +34,7 @@ jobs:
       - name: Set up environment
         run: |
           sudo apt-get update
-          sudo apt-get install -y dpkg-dev jq
+          sudo apt-get install -y dpkg-dev
 
       - name: Create Debian package
         run: |
@@ -52,11 +52,23 @@ jobs:
           chmod 755 test/cloudsmith-debian-example-1.0.0-amd64/usr/local/bin/cloudsmith-debian-example
           dpkg-deb --build test/cloudsmith-debian-example-1.0.0-amd64
 
+      - name: Verify Debian package creation
+        run: |
+          ls -la test
+          ls -la test/cloudsmith-debian-example-1.0.0-amd64.deb
+
+      - name: Echo dynamic inputs
+        run: |
+          echo "Owner: ${{ github.event.inputs.owner }}"
+          echo "Repo: ${{ github.event.inputs.repo }}"
+          echo "Service Slug: ${{ github.event.inputs.service_slug }}"
+
       - name: Get OIDC token
         run: |
-          value=$(curl -H "Authorization: bearer ${{ secrets.ACTIONS_ID_TOKEN_REQUEST_TOKEN }}" "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=api://AzureADTokenExchange" | jq -r '.value')
+          value=$(curl -H "Authorization: bearer ${{ secrets.GITHUB_TOKEN }}" "${{ steps.id_token.outputs.id_token_url }}&audience=api://AzureADTokenExchange" | jq -r '.value')
           echo "OIDC Token: $value"
           token=$(curl -X POST -H "Content-Type: application/json" -d "{\"oidc_token\":\"$value\", \"service_slug\":\"${{ github.event.inputs.service_slug }}\"}" https://api.cloudsmith.io/openid/${{ github.event.inputs.owner }}/ | jq -r '.token')
+          echo "Cloudsmith Token: $token"
           echo "CLOUDSMITH_API_KEY=$token" >> $GITHUB_ENV
 
       - name: Cloudsmith Push Debian Package
@@ -64,8 +76,8 @@ jobs:
         with:
           command: 'push'
           format: 'deb'
-          owner: '${{ github.event.inputs.owner }}'
-          repo: '${{ github.event.inputs.repo }}'
+          owner: ${{ github.event.inputs.owner }}
+          repo: ${{ github.event.inputs.repo }}
           distro: 'debian'
           release: 'buster'
           republish: 'true'
